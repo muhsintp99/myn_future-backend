@@ -4,8 +4,9 @@ const contactSchema = new mongoose.Schema({
   fullname: { type: String, required: true },
   mobile: { type: String, required: true },
   email: { type: String, required: true },
-  subject: { type: String, required: true },
-  message: { type: String, required: true },
+  location: { type: String, required: true },
+  course: { type: String},
+  school: { type: String},
   status: { type: String, enum: ['new', 'read', 'closed'], default: 'new' }
 }, {
   timestamps: true

@@ -3,12 +3,13 @@ const Contact = require('../models/contact');
 // Create a new contact message
 exports.createContact = async (req, res) => {
   try {
-    const { fullname, mobile, email, subject, message } = req.body;
-    if (!fullname || !mobile || !email || !subject || !message) {
-      return res.status(400).json({ message: 'All fields are required.' });
+    const { fullname, mobile, email, location, course, school } = req.body;
+
+    if (!fullname || !mobile || !email || !location) {
+      return res.status(400).json({ message: 'fullname, mobile, email, and location are required.' });
     }
 
-    const newContact = new Contact({ fullname, mobile, email, subject, message });
+    const newContact = new Contact({ fullname, mobile, email, location, course, school });
     await newContact.save();
 
     res.status(201).json({ message: 'Contact message created successfully.', data: newContact });
@@ -32,11 +33,13 @@ exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+
     if (!['new', 'read', 'closed'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value.' });
     }
 
     const updated = await Contact.findByIdAndUpdate(id, { status }, { new: true });
+
     if (!updated) {
       return res.status(404).json({ message: 'Contact message not found.' });
     }
@@ -52,6 +55,7 @@ exports.deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await Contact.findByIdAndDelete(id);
+
     if (!deleted) {
       return res.status(404).json({ message: 'Contact message not found.' });
     }
