@@ -25,7 +25,7 @@ exports.requireSignIn = async (req, res, next) => {
     // Verify and decode the token
     const decoded = JWT.verify(token, process.env.JWT_SECRET);
     
-    // Fetch fresh user data from database to ensure user still exists and is active
+    // Fetch fresh user data from database
     const user = await User.findById(decoded._id).select('-password');
     
     if (!user) {
@@ -81,7 +81,6 @@ exports.requireSignIn = async (req, res, next) => {
 // Admin Access Middleware
 exports.isAdmin = async (req, res, next) => {
   try {
-    // Check if user info is attached from requireSignIn middleware
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -89,7 +88,6 @@ exports.isAdmin = async (req, res, next) => {
       });
     }
 
-    // Check userType from the attached user info
     if (req.user.userType !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -111,7 +109,6 @@ exports.isAdmin = async (req, res, next) => {
 // Licensee Access Middleware
 exports.isLicensee = async (req, res, next) => {
   try {
-    // Check if user info is attached from requireSignIn middleware
     if (!req.user) {
       return res.status(401).json({
         success: false,
@@ -119,7 +116,6 @@ exports.isLicensee = async (req, res, next) => {
       });
     }
 
-    // Check userType from the attached user info
     if (req.user.userType !== 'licensee') {
       return res.status(403).json({
         success: false,
@@ -166,7 +162,6 @@ exports.isAdminOrLicensee = (req, res, next) => {
   }
 };
 
-
 // Middleware to check if user can access their own resources or if admin
 exports.isSelfOrAdmin = (req, res, next) => {
   try {
@@ -179,7 +174,6 @@ exports.isSelfOrAdmin = (req, res, next) => {
 
     const userId = req.params.id;
     
-    // Allow if user is admin or accessing their own resource
     if (req.user.userType === 'admin' || req.user._id.toString() === userId) {
       next();
     } else {
@@ -197,3 +191,4 @@ exports.isSelfOrAdmin = (req, res, next) => {
     });
   }
 };
+

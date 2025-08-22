@@ -31,7 +31,5 @@ const blogSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 blogSchema.index({createdAt: 1});
-// blogSchema.index({ isDeleted: 1 });
-
 
 module.exports = mongoose.model('Blog', blogSchema);

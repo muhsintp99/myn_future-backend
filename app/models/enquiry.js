@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { create } = require('./blog');
 
 const enquirySchema = new mongoose.Schema({
   enqNo: {
@@ -31,15 +30,14 @@ const enquirySchema = new mongoose.Schema({
     required: true
   },
   course: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Course',
+    type: String,
     required: true
   },
   school: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'College',
+    type: String,
     required: true
   },
+
   leadQuality: {
     type: String,
     enum: ["High", "Medium", "Low"]

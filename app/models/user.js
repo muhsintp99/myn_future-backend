@@ -4,16 +4,13 @@ const Schema = mongoose.Schema;
 const UserSchema = new Schema({
   fname: {
     type: String,
-    trim: true
   },
   lname: {
     type: String,
-    trim: true
   },
   email: {
     type: String,
     unique: true,
-    trim: true,
     lowercase: true,
     match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please provide a valid email address']
   },
@@ -21,7 +18,6 @@ const UserSchema = new Schema({
     type: String,
     required: [true, "Mobile number is required"],
     unique: true,
-    trim: true
   },
   password: { 
     type: String,
@@ -30,7 +26,7 @@ const UserSchema = new Schema({
   },
   image: { 
     type: String,
-    default: '/public/defult/user.png'
+    default: '/public/default/user.png'
   },
   userType: {
     type: String,
@@ -38,10 +34,6 @@ const UserSchema = new Schema({
     enum: ['admin', 'licensee'],
     default: 'licensee'
   },
-  // userRoles: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'UserRole',
-  // },
   deviceId: {
     type: String,
     default: null
@@ -80,7 +72,9 @@ const UserSchema = new Schema({
     default: null
   },
   resetPasswordToken: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  otp: { type: String, default: null },
+  otpExpires: { type: Date, default: null }
 }, {
   timestamps: { 
     createdAt: 'createdAt', 

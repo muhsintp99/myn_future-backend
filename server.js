@@ -10,8 +10,7 @@ const dotenv = require("dotenv").config();
 // Database connection
 const connectDB = require('./config/dbconfig');
 const seedDefaultIndiaCountry = require('./app/helpers/insertIndia');
-
-connectDB().then(() => seedDefaultIndiaCountry());
+const { insertDefaultAdmin } = require('./app/helpers/insertAdmin')
 
 const app = express();
 const port = process.env.PORT || 5050;
@@ -46,8 +45,7 @@ app.use(rateLimit({
 }));
 
 app.use(`/public/defult`, express.static(path.join(__dirname, `public/defult`)));
-app.use('/cloudinary', require('./app/routes/createCloudinaryUpload'));
-
+app.use('/public', express.static(path.join(__dirname, 'public')));
 // Store SSE clients
 const sseClients = new Set();
 
@@ -84,24 +82,30 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/users', require('./app/routes/user'));
 app.use('/blog', require('./app/routes/blogRouter'));
-app.use('/services', require('./app/routes/serviceRoutes'));
-app.use('/gallery', require('./app/routes/galleryRoutes'));
+app.use('/college', require('./app/routes/collegeRouter'));
+app.use('/contact', require('./app/routes/contactRoutes'));
+app.use('/countries', require('./app/routes/countryRoutes'));
+app.use('/states', require('./app/routes/stateRoutes'));
+app.use('/courses', require('./app/routes/courseRoutes'));
 app.use('/enquiries', require('./app/routes/enquiry'));
 app.use('/followUp', require('./app/routes/followUp'));
-app.use('/countries', require('./app/routes/countryRoutes'));
-app.use('/courses', require('./app/routes/courseRoutes'));
-app.use('/college', require('./app/routes/collegeRouter'));
+app.use('/gallery', require('./app/routes/galleryRoutes'));
 app.use('/intake', require('./app/routes/intakeRoutes'));
-app.use('/userProfile', require('./app/routes/userProfile'));
-app.use('/userroles', require('./app/routes/userRole'));
-app.use('/orgType', require('./app/routes/orgType'));
-app.use('/orgCategory', require('./app/routes/orgCategory'));
-app.use('/productService', require('./app/routes/productServices'));
-app.use('/supportType', require('./app/routes/supportType'));
-app.use('/orgProfile', require('./app/routes/orgProfile'));
-app.use('/contact', require('./app/routes/contactRoutes'));
+app.use('/services', require('./app/routes/serviceRoutes'));
 
 // Server start
-app.listen(port, () => {
-  console.log(`🚀 Server is running on port ${port}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    await seedDefaultIndiaCountry();
+    await insertDefaultAdmin();
+    app.listen(port, () => {
+      console.log(`🚀 Server is running on port ${port}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error.message);
+    process.exit(1);
+  }
+};
+
+startServer();

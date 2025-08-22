@@ -2,13 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const courseController = require('../Controllers/courseController');
-// const createUpload = require('../middlewares/upload');
-const createUpload = require('../middlewares/cloudinaryUpload');
+const createUpload = require('../middlewares/upload');
 
 const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
-
-const uploadCoursesImage = createUpload.createUpload('courses');
-
+const uploadCoursesImage = createUpload('courses');
 // Create
 router.post('/',
     requireSignIn,

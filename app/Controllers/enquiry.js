@@ -12,6 +12,7 @@ exports.CreateEnquiryController = async (req, res) => {
       location,
       course,
       school,
+      category,
       leadQuality,
       enqTo,
       enqDescp,
@@ -19,14 +20,14 @@ exports.CreateEnquiryController = async (req, res) => {
       remarks,
     } = req.body;
 
-    if (!enqDescp || !fName || !email || !mobile || !location) {
+    if (!enqDescp || !fName || !email || !mobile || !location || !course || !school) {
       return res.status(400).send({ message: "All required fields must be provided" });
     }
 
     const existingEnquiry = await Enquiry.findOne({ email });
     if (existingEnquiry) {
-      return res.status(200).send({
-        success: true,
+      return res.status(400).send({
+        success: false,
         message: "Enquiry with this email already exists",
       });
     }
@@ -37,7 +38,7 @@ exports.CreateEnquiryController = async (req, res) => {
       const numericPart = parseInt(maxEnqNo[0].enqNo.slice(3), 10);
       newEnqNo = `Enq${(numericPart + 1).toString().padStart(2, '0')}`;
     } else {
-      newEnqNo = 'Enq01'; // Fixed initial enqNo to 'Enq01' instead of 'Enq0'
+      newEnqNo = 'Enq01';
     }
 
     const enquiry = await new Enquiry({
@@ -50,20 +51,19 @@ exports.CreateEnquiryController = async (req, res) => {
       course,
       school,
       leadQuality,
+      category,
       enqTo,
       status: 'new',
       referenceId,
       remarks,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       createdBy: 'admin',
       updatedBy: 'admin',
       isDeleted: false
     }).save();
 
-    await sendWelcomeEmail(email, `${fName}`);
+    await sendWelcomeEmail(email, fName);
 
-    const sseClients = req.app.get('sseClients');
+    const sseClients = req.app.get('sseClients') || new Set();
     const eventData = JSON.stringify({
       id: enquiry._id,
       fName: enquiry.fName,
@@ -81,7 +81,7 @@ exports.CreateEnquiryController = async (req, res) => {
       enquiry,
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in CreateEnquiryController:', error);
     if (error.code === 11000 && error.keyPattern.email) {
       return res.status(400).send({
         success: false,
@@ -90,7 +90,7 @@ exports.CreateEnquiryController = async (req, res) => {
     }
     res.status(500).send({
       success: false,
-      message: "Error in creating an enquiry",
+      message: `Error in creating an enquiry: ${error.message}`,
       error,
     });
   }
@@ -100,18 +100,18 @@ exports.CreateEnquiryController = async (req, res) => {
 const checkAndUpdateStatus = async () => {
   try {
     const enquiries = await Enquiry.find({ status: 'new', isDeleted: false });
-    enquiries.forEach(async (enquiry) => {
+    const currentDate = new Date();
+    for (const enquiry of enquiries) {
       const createdDate = new Date(enquiry.createdAt);
-      const currentDate = new Date();
       if (createdDate > currentDate) {
         console.warn(`Enquiry ${enquiry._id} has a future created date.`);
-        return;
+        continue;
       }
       const timeDifference = currentDate - createdDate;
       if (timeDifference > 24 * 60 * 60 * 1000) {
         await Enquiry.findByIdAndUpdate(enquiry._id, { status: 'pending' });
       }
-    });
+    }
   } catch (error) {
     console.error('Error checking and updating status:', error);
   }
@@ -126,13 +126,13 @@ cron.schedule('0 * * * *', () => {
 exports.GetAllEnquiriesController = async (req, res) => {
   try {
     const enquiry = await Enquiry.find({ isDeleted: false })
-      .populate('school', 'name')
-      .populate('course', 'title')
+      .populate('followUpData')
       .sort({ createdAt: -1 });
     const total = await Enquiry.countDocuments({ isDeleted: false });
     const formattedEnquiries = enquiry.map((enq) => ({
       ...enq.toObject(),
-      followUpDataPrsnt: enq.followUpData && enq.followUpData.length > 0,
+      followUpDataPrsnt: enq.followUpData && enq.followUpData.length > 0 ,
+      // followUpDataPrsnt: !!enq.followUpData,
     }));
     res.status(200).send({
       success: true,
@@ -141,10 +141,10 @@ exports.GetAllEnquiriesController = async (req, res) => {
       enquiry: formattedEnquiries,
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in GetAllEnquiriesController:', error);
     res.status(500).send({
       success: false,
-      message: "Error in getting all enquiries",
+      message: `Error in getting all enquiries: ${error.message}`,
       error,
     });
   }
@@ -154,7 +154,7 @@ exports.GetAllEnquiriesController = async (req, res) => {
 exports.GetSingleEnquiryController = async (req, res) => {
   try {
     const { id } = req.params;
-    const enquiry = await Enquiry.findById(id);
+    const enquiry = await Enquiry.findById(id).populate('followUpData');
     if (!enquiry) {
       return res.status(404).send({
         success: false,
@@ -167,10 +167,10 @@ exports.GetSingleEnquiryController = async (req, res) => {
       enquiry,
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in GetSingleEnquiryController:', error);
     res.status(500).send({
       success: false,
-      message: "Error in getting a single enquiry",
+      message: `Error in getting a single enquiry: ${error.message}`,
       error,
     });
   }
@@ -197,10 +197,10 @@ exports.UpdateEnquiryController = async (req, res) => {
       enquiry,
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in UpdateEnquiryController:', error);
     res.status(500).send({
       success: false,
-      message: "Error in updating the enquiry",
+      message: `Error in updating the enquiry: ${error.message}`,
       error,
     });
   }
@@ -215,16 +215,22 @@ exports.softDelete = async (req, res) => {
       { isDeleted: true, updatedAt: Date.now() },
       { new: true, runValidators: true }
     );
+    if (!enquiry) {
+      return res.status(404).send({
+        success: false,
+        message: "Enquiry not found",
+      });
+    }
     res.status(200).send({
       success: true,
       message: "Successfully deleted the enquiry",
       enquiry,
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in softDelete:', error);
     res.status(500).send({
       success: false,
-      message: "Error in deleting the enquiry",
+      message: `Error in deleting the enquiry: ${error.message}`,
       error,
     });
   }
@@ -233,16 +239,16 @@ exports.softDelete = async (req, res) => {
 // Enquiry count
 exports.enquiryCount = async (req, res) => {
   try {
-    const enquiry = await Enquiry.countDocuments();
+    const count = await Enquiry.countDocuments({ isDeleted: false });
     res.status(200).send({
       success: true,
-      enquiry
+      count
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in enquiryCount:', error);
     res.status(500).send({
       success: false,
-      message: "Error in getting count",
+      message: `Error in getting count: ${error.message}`,
       error
     });
   }
@@ -265,14 +271,14 @@ exports.UpdateEnquiryStatus = async (req, res) => {
     }
     res.status(200).send({
       success: true,
-      // message: "Enquiry status updated to active",
+      message: "Enquiry status updated to active",
       enquiry,
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in UpdateEnquiryStatus:', error);
     res.status(500).send({
       success: false,
-      message: "Error updating enquiry status",
+      message: `Error updating enquiry status: ${error.message}`,
       error,
     });
   }
@@ -296,10 +302,10 @@ exports.getNewEnquiryCount = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.log(error);
+    console.error('Error in getNewEnquiryCount:', error);
     res.status(500).send({
       success: false,
-      message: "Error getting new enquiry count",
+      message: `Error getting new enquiry count: ${error.message}`,
       error,
     });
   }

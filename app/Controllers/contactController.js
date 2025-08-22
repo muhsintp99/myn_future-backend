@@ -1,15 +1,25 @@
 const Contact = require('../models/contact');
+const fs = require('fs');
+const path = require('path');
 
-// Create a new contact message
+// CREATE
 exports.createContact = async (req, res) => {
   try {
     const { fullname, mobile, email, location, course, school } = req.body;
 
     if (!fullname || !mobile || !email || !location) {
-      return res.status(400).json({ message: 'fullname, mobile, email, and location are required.' });
+      return res.status(400).json({ message: 'Full name, contact, email, and location are required.' });
     }
 
-    const newContact = new Contact({ fullname, mobile, email, location, course, school });
+    const newContact = new Contact({
+      fullname,
+      mobile,
+      email,
+      location,
+      course,
+      school
+    });
+
     await newContact.save();
 
     res.status(201).json({ message: 'Contact message created successfully.', data: newContact });
@@ -18,7 +28,7 @@ exports.createContact = async (req, res) => {
   }
 };
 
-// Get all contact messages
+// READ ALL
 exports.getContacts = async (req, res) => {
   try {
     const contacts = await Contact.find().sort({ createdAt: -1 });
@@ -28,18 +38,16 @@ exports.getContacts = async (req, res) => {
   }
 };
 
-// Update status
+// UPDATE STATUS
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-
     if (!['new', 'read', 'closed'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value.' });
     }
 
     const updated = await Contact.findByIdAndUpdate(id, { status }, { new: true });
-
     if (!updated) {
       return res.status(404).json({ message: 'Contact message not found.' });
     }
@@ -50,12 +58,11 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
-// Hard delete one
+// DELETE ONE
 exports.deleteContact = async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await Contact.findByIdAndDelete(id);
-
     if (!deleted) {
       return res.status(404).json({ message: 'Contact message not found.' });
     }
@@ -66,7 +73,7 @@ exports.deleteContact = async (req, res) => {
   }
 };
 
-// Hard delete all
+// DELETE ALL
 exports.deleteAllContacts = async (req, res) => {
   try {
     await Contact.deleteMany({});
@@ -76,7 +83,7 @@ exports.deleteAllContacts = async (req, res) => {
   }
 };
 
-// Get total and new counts
+// COUNT
 exports.getCount = async (req, res) => {
   try {
     const totalCount = await Contact.countDocuments();

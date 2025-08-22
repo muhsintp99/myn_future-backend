@@ -62,5 +62,4 @@ intakeSchema.index({ createdAt: 1 });
 intakeSchema.index({ isDeleted: 1 });
 
 const IntakeCollege = mongoose.model('IntakeCollege', intakeSchema);
-
 module.exports = IntakeCollege;

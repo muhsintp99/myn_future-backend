@@ -65,7 +65,6 @@ const gallerySchema = new mongoose.Schema({
     date: {
         type: Date,
         required: true
-        // No default value - must be provided
     },
     title: {
         type: String,
@@ -98,8 +97,7 @@ const gallerySchema = new mongoose.Schema({
 // Index for better query performance
 gallerySchema.index({ createdAt: -1 });
 gallerySchema.index({ isDeleted: 1 });
-gallerySchema.index({ date: -1 }); // Index for date field
+gallerySchema.index({ date: -1 });
 
 const Gallery = mongoose.model('Gallery', gallerySchema);
-
 module.exports = Gallery;

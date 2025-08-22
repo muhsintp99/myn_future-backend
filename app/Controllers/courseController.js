@@ -1,18 +1,17 @@
-// courseController.js (no changes needed)
 const Course = require('../models/course');
+const fs = require('fs');
+const path = require('path');
 
 // Create new course
 exports.createCourse = async (req, res) => {
   try {
-    // const image = req.file ? `/public/courses/${req.file.filename}` : null;
-    const image = req.file ? req.file.path : null;
-
+    const image = req.file
+      ? `${req.protocol}://${req.get('host')}/public/courses/${req.file.filename}`
+      : null;
 
     const courseData = {
       ...req.body,
-      image, // set image path to course data
-      createdBy: req.user?.role || 'admin',
-      updatedBy: req.user?.role || 'admin'
+      image,
     };
 
     const course = new Course(courseData);
@@ -54,30 +53,31 @@ exports.getCourseById = async (req, res) => {
 // Update course
 exports.updateCourse = async (req, res) => {
   try {
-    // const image = req.file ? `/public/courses/${req.file.filename}` : undefined;
-    const image = req.file ? req.file.path : null;
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).json({ message: 'Course not found' });
 
+    // Delete old image if new one uploaded
+    if (req.file && course.image) {
+      const oldPath = path.join(__dirname, `../../public/courses/${path.basename(course.image)}`);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    const image = req.file
+      ? `${req.protocol}://${req.get('host')}/public/courses/${req.file.filename}`
+      : course.image;
 
     const updatedData = {
       ...req.body,
-      updatedBy: req.user?.role || 'admin',
+      image,
     };
 
-    if (image !== undefined) {
-      updatedData.image = image;
-    }
-
-    const course = await Course.findByIdAndUpdate(
+    const updatedCourse = await Course.findByIdAndUpdate(
       req.params.id,
       { $set: updatedData },
       { new: true, runValidators: true }
     );
 
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
-
-    res.json(course);
+    res.json(updatedCourse);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -86,13 +86,20 @@ exports.updateCourse = async (req, res) => {
 // Delete course
 exports.deleteCourse = async (req, res) => {
   try {
-    const deleted = await Course.findByIdAndDelete(req.params.id);
+    const course = await Course.findById(req.params.id);
 
-    if (!deleted) {
+    if (!course) {
       return res.status(404).json({ message: "Course not found" });
     }
 
-    res.json({ message: 'Course permanently deleted', data: deleted });
+    // Delete image from folder if exists
+    if (course.image && fs.existsSync(course.image)) {
+      deleteImage(course.image);
+    }
+
+    await Course.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Course permanently deleted', data: course });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
