@@ -1,24 +1,14 @@
-const fs = require('fs');
-const path = require('path');
 const Service = require('../models/service');
 
 // CREATE
 exports.createService = async (req, res) => {
   try {
-    const { title, shortDesc, fullDesc, points } = req.body;
-    if (!req.file) return res.status(400).json({ error: 'Image is required.' });
-
-    const image = `${req.protocol}://${req.get('host')}/public/service/${req.file.filename}`;
-    let parsedPoints = [];
-
-    if (points) {
-      parsedPoints = JSON.parse(points);
-      if (!Array.isArray(parsedPoints)) {
-        return res.status(400).json({ error: 'Points must be an array.' });
-      }
+    const { title } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: 'Title is required.' });
     }
 
-    const service = new Service({ title, shortDesc, fullDesc, image, points: parsedPoints });
+    const service = new Service({ title });
     const saved = await service.save();
     res.status(201).json(saved);
   } catch (err) {
@@ -30,8 +20,8 @@ exports.createService = async (req, res) => {
 // GET ALL
 exports.getAllServices = async (req, res) => {
   try {
-    const services = await Service.find().sort({ createdAt: -1 });
-    const total = await Service.countDocuments();
+    const services = await Service.find({ isDeleted: false }).sort({ createdAt: -1 });
+    const total = await Service.countDocuments({ isDeleted: false });
     res.json({ total, data: services });
   } catch (err) {
     res.status(500).json({ error: 'Failed to retrieve services' });
@@ -42,7 +32,9 @@ exports.getAllServices = async (req, res) => {
 exports.getServiceById = async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
-    if (!service) return res.status(404).json({ message: 'Service not found' });
+    if (!service || service.isDeleted) {
+      return res.status(404).json({ message: 'Service not found' });
+    }
     res.json(service);
   } catch (err) {
     res.status(500).json({ error: 'Failed to retrieve service' });
@@ -52,34 +44,17 @@ exports.getServiceById = async (req, res) => {
 // UPDATE
 exports.updateService = async (req, res) => {
   try {
-    const { title, shortDesc, fullDesc, points } = req.body;
+    const { title } = req.body;
     const service = await Service.findById(req.params.id);
-    if (!service) return res.status(404).json({ message: 'Service not found' });
-
-    let parsedPoints;
-    if (points) {
-      parsedPoints = JSON.parse(points);
-      if (!Array.isArray(parsedPoints)) {
-        return res.status(400).json({ error: 'Points must be an array.' });
-      }
+    if (!service || service.isDeleted) {
+      return res.status(404).json({ message: 'Service not found' });
     }
 
-    if (req.file && service.image) {
-      const oldImagePath = path.join(__dirname, `../../public/service/${path.basename(service.image)}`);
-      if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
-    }
+    if (title) service.title = title;
+    service.updatedBy = "admin";
+    await service.save();
 
-    const updateData = {};
-    if (title) updateData.title = title;
-    if (shortDesc) updateData.shortDesc = shortDesc;
-    if (fullDesc) updateData.fullDesc = fullDesc;
-    if (parsedPoints !== undefined) updateData.points = parsedPoints;
-    if (req.file) {
-      updateData.image = `${req.protocol}://${req.get('host')}/public/service/${req.file.filename}`;
-    }
-
-    const updated = await Service.findByIdAndUpdate(req.params.id, updateData, { new: true });
-    res.json(updated);
+    res.json(service);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update service' });
   }
@@ -89,11 +64,8 @@ exports.updateService = async (req, res) => {
 exports.hardDeleteService = async (req, res) => {
   try {
     const service = await Service.findById(req.params.id);
-    if (!service) return res.status(404).json({ message: 'Service not found' });
-
-    if (service.image) {
-      const imagePath = path.join(__dirname, `../../public/service/${path.basename(service.image)}`);
-      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    if (!service) {
+      return res.status(404).json({ message: 'Service not found' });
     }
 
     await Service.findByIdAndDelete(req.params.id);

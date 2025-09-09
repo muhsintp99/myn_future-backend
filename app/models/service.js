@@ -6,28 +6,7 @@ const serviceSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Title is required'],
     },
-    shortDesc: {
-      type: String,
-      required: [true, 'Short description is required'],
-    },
-    fullDesc: {
-      type: String,
-      required: [true, 'Full description is required'],
-    },
-    image: {
-      type: String,
-      required: [true, 'Image is required'],
-    },
-    points: [
-      {
-        title: {
-          type: String,
-        },
-        description: {
-          type: String,
-        },
-      },
-    ],
+    
     isDeleted: {
       type: Boolean,
       default: false,

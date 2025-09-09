@@ -85,7 +85,7 @@ app.set("sseClients", sseClients);
 
 // Default route
 app.get("/", (req, res) => {
-  res.json({ message: "Hello, Server Started" });
+  res.json({ message: "Hello, Server Started in Myn future" });
 });
 
 // Routes
