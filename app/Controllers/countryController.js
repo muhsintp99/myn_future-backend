@@ -87,10 +87,6 @@ exports.deleteCountry = async (req, res) => {
     const country = await Country.findById(req.params.id);
     if (!country) return res.status(404).json({ error: 'Country not found' });
 
-    if (country.name.toLowerCase() === 'india') {
-      return res.status(400).json({ error: 'Cannot delete India' });
-    }
-
     if (country.image) {
       const imagePath = path.join(__dirname, `../../public/country/${path.basename(country.image)}`);
       if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);

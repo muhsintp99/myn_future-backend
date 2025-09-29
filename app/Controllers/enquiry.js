@@ -126,12 +126,14 @@ cron.schedule('0 * * * *', () => {
 exports.GetAllEnquiriesController = async (req, res) => {
   try {
     const enquiry = await Enquiry.find({ isDeleted: false })
+      .populate('course', 'title')
+      .populate('school', 'name')
       .populate('followUpData')
       .sort({ createdAt: -1 });
     const total = await Enquiry.countDocuments({ isDeleted: false });
     const formattedEnquiries = enquiry.map((enq) => ({
       ...enq.toObject(),
-      followUpDataPrsnt: enq.followUpData && enq.followUpData.length > 0 ,
+      followUpDataPrsnt: enq.followUpData && enq.followUpData.length > 0,
       // followUpDataPrsnt: !!enq.followUpData,
     }));
     res.status(200).send({
@@ -154,7 +156,10 @@ exports.GetAllEnquiriesController = async (req, res) => {
 exports.GetSingleEnquiryController = async (req, res) => {
   try {
     const { id } = req.params;
-    const enquiry = await Enquiry.findById(id).populate('followUpData');
+    const enquiry = await Enquiry.findById(id)
+      .populate('course', 'title')
+      .populate('school', 'name')
+      .populate('followUpData');
     if (!enquiry) {
       return res.status(404).send({
         success: false,

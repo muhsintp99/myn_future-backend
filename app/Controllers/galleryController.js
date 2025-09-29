@@ -1,3 +1,100 @@
+// const fs = require('fs');
+// const path = require('path');
+// const Gallery = require('../models/gallery');
+
+// // CREATE
+// exports.createGallery = async (req, res) => {
+//   try {
+//     const { title, from, link, date } = req.body;
+//     const image = req.file
+//       ? `${req.protocol}://${req.get('host')}/public/gallery/${req.file.filename}`
+//       : null;
+
+//     if (!image) return res.status(400).json({ error: "Image is required." });
+
+//     const item = new Gallery({
+//       image,
+//       title,
+//       from,
+//       date: date ? new Date(date) : new Date(),
+//       link
+//     });
+
+//     const saved = await item.save();
+//     res.status(201).json({ data: saved });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message || "Error creating gallery item" });
+//   }
+// };
+
+// // GET ALL
+// exports.getAllGallery = async (req, res) => {
+//   try {
+//     const items = await Gallery.find().sort({ createdAt: -1 });
+//     const total = await Gallery.countDocuments();
+//     res.json({ data: items, total });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message || "Error retrieving gallery" });
+//   }
+// };
+
+// // GET BY ID
+// exports.getGalleryById = async (req, res) => {
+//   try {
+//     const item = await Gallery.findById(req.params.id);
+//     if (!item) return res.status(404).json({ error: "Gallery item not found" });
+//     res.json({ data: item });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message || "Error fetching gallery item" });
+//   }
+// };
+
+// // UPDATE
+// exports.updateGallery = async (req, res) => {
+//   try {
+//     const { title, from, link } = req.body;
+//     const gallery = await Gallery.findById(req.params.id);
+//     if (!gallery) return res.status(404).json({ error: "Gallery item not found" });
+
+//     if (req.file && gallery.image) {
+//       const oldImagePath = path.join(__dirname, `../../public/gallery/${path.basename(gallery.image)}`);
+//       if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
+//     }
+
+//     const updateData = { title, from, link };
+//     if (req.file) {
+//       updateData.image = `${req.protocol}://${req.get('host')}/public/gallery/${req.file.filename}`;
+//     }
+
+//     const updatedItem = await Gallery.findByIdAndUpdate(req.params.id, updateData, { new: true });
+//     res.json({ data: updatedItem });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message || "Error updating gallery item" });
+//   }
+// };
+
+// // HARD DELETE
+// exports.deleteGallery = async (req, res) => {
+//   try {
+//     const gallery = await Gallery.findById(req.params.id);
+//     if (!gallery) return res.status(404).json({ error: "Gallery item not found" });
+
+//     if (gallery.image) {
+//       const imagePath = path.join(__dirname, `../../public/gallery/${path.basename(gallery.image)}`);
+//       if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+//     }
+
+//     await Gallery.findByIdAndDelete(req.params.id);
+//     res.json({ message: "Gallery item permanently deleted" });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message || "Error deleting gallery item" });
+//   }
+// };
+
+
+
+
+
 const fs = require('fs');
 const path = require('path');
 const Gallery = require('../models/gallery');
@@ -5,7 +102,6 @@ const Gallery = require('../models/gallery');
 // CREATE
 exports.createGallery = async (req, res) => {
   try {
-    const { title, from, link, date } = req.body;
     const image = req.file
       ? `${req.protocol}://${req.get('host')}/public/gallery/${req.file.filename}`
       : null;
@@ -13,11 +109,7 @@ exports.createGallery = async (req, res) => {
     if (!image) return res.status(400).json({ error: "Image is required." });
 
     const item = new Gallery({
-      image,
-      title,
-      from,
-      date: date ? new Date(date) : new Date(),
-      link
+      image
     });
 
     const saved = await item.save();
@@ -30,8 +122,8 @@ exports.createGallery = async (req, res) => {
 // GET ALL
 exports.getAllGallery = async (req, res) => {
   try {
-    const items = await Gallery.find().sort({ createdAt: -1 });
-    const total = await Gallery.countDocuments();
+    const items = await Gallery.find({ isDeleted: false }).sort({ createdAt: -1 });
+    const total = await Gallery.countDocuments({ isDeleted: false });
     res.json({ data: items, total });
   } catch (error) {
     res.status(500).json({ error: error.message || "Error retrieving gallery" });
@@ -42,7 +134,7 @@ exports.getAllGallery = async (req, res) => {
 exports.getGalleryById = async (req, res) => {
   try {
     const item = await Gallery.findById(req.params.id);
-    if (!item) return res.status(404).json({ error: "Gallery item not found" });
+    if (!item || item.isDeleted) return res.status(404).json({ error: "Gallery item not found" });
     res.json({ data: item });
   } catch (error) {
     res.status(500).json({ error: error.message || "Error fetching gallery item" });
@@ -52,16 +144,16 @@ exports.getGalleryById = async (req, res) => {
 // UPDATE
 exports.updateGallery = async (req, res) => {
   try {
-    const { title, from, link } = req.body;
     const gallery = await Gallery.findById(req.params.id);
-    if (!gallery) return res.status(404).json({ error: "Gallery item not found" });
+    if (!gallery || gallery.isDeleted) return res.status(404).json({ error: "Gallery item not found" });
 
+    // Delete old image if a new one is uploaded
     if (req.file && gallery.image) {
       const oldImagePath = path.join(__dirname, `../../public/gallery/${path.basename(gallery.image)}`);
       if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
     }
 
-    const updateData = { title, from, link };
+    const updateData = {};
     if (req.file) {
       updateData.image = `${req.protocol}://${req.get('host')}/public/gallery/${req.file.filename}`;
     }
@@ -77,15 +169,23 @@ exports.updateGallery = async (req, res) => {
 exports.deleteGallery = async (req, res) => {
   try {
     const gallery = await Gallery.findById(req.params.id);
-    if (!gallery) return res.status(404).json({ error: "Gallery item not found" });
+    if (!gallery || gallery.isDeleted) return res.status(404).json({ error: "Gallery item not found" });
 
-    if (gallery.image) {
+    // Delete the image file from the server if it exists and is not the default image
+    if (gallery.image && gallery.image !== '/public/defult/noimage.png') {
       const imagePath = path.join(__dirname, `../../public/gallery/${path.basename(gallery.image)}`);
-      if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+      try {
+        if (fs.existsSync(imagePath)) {
+          fs.unlinkSync(imagePath);
+        }
+      } catch (fileError) {
+        console.error(`Failed to delete image file: ${imagePath}`, fileError);
+        // Continue with document deletion even if file deletion fails
+      }
     }
 
     await Gallery.findByIdAndDelete(req.params.id);
-    res.json({ message: "Gallery item permanently deleted" });
+    res.json({ message: "Gallery item and associated image permanently deleted" });
   } catch (error) {
     res.status(500).json({ error: error.message || "Error deleting gallery item" });
   }

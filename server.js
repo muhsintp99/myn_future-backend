@@ -85,7 +85,7 @@ app.set("sseClients", sseClients);
 
 // Default route
 app.get("/", (req, res) => {
-  res.json({ message: "Hello, Server Started in Myn future" });
+  res.json({ message: "Hello, Server Started in Myn Future" });
 });
 
 // Routes
@@ -106,7 +106,7 @@ app.use("/services", require("./app/routes/serviceRoutes"));
 const startServer = async (retryPort = port) => {
   try {
     await connectDB();
-    await seedDefaultIndiaCountry();
+    // await seedDefaultIndiaCountry();
     await insertDefaultAdmin();
 
     const server = app.listen(retryPort, () => {

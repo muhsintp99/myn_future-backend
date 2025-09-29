@@ -62,22 +62,6 @@ const gallerySchema = new mongoose.Schema({
         required: true,
         default: '/public/defult/noimage.png'
     },
-    date: {
-        type: Date,
-        required: true
-    },
-    title: {
-        type: String,
-        required: true
-    },
-    from: {
-        type: String,
-        required: true
-    },
-    link: {
-        type: String,
-        required: true
-    },
     isDeleted: {
         type: Boolean,
         default: false

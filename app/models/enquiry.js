@@ -29,14 +29,17 @@ const enquirySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  course: {
-    type: String,
-    required: true
-  },
-  school: {
-    type: String,
-    required: true
-  },
+  // course: {
+  //   type: String,
+  //   required: true
+  // },
+  // school: {
+  //   type: String,
+  //   required: true
+  // },
+
+  course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course' },
+  school: { type: mongoose.Schema.Types.ObjectId, ref: 'College' },
 
   leadQuality: {
     type: String,
