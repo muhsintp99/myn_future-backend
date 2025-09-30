@@ -153,8 +153,8 @@ const port = process.env.PORT || 5050;
 // ======= CORS Configuration =======
 const allowedOrigins = [
   "https://dashboard.mynfuture.com",
-  "https://www.mynfuture.ae",
-  "https://mynfuture.ae",
+  "https://www.mynfuture.com",
+  "https://mynfuture.com",
   "http://localhost:4040",
 ];
 
