@@ -365,7 +365,6 @@ exports.getColleges = async (req, res) => {
     const countResult = await College.aggregate(countPipeline);
     const total = countResult.length > 0 ? countResult[0].total : 0;
 
-    console.log('Fetched colleges:', colleges.length);
     res.json({
       colleges,
       totalPages: Math.ceil(total / limit),
