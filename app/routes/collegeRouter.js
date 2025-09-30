@@ -33,11 +33,9 @@ const mongoose = require('mongoose');
 
 const uploadCollegeImage = createUpload('college');
 
-// Validation middleware
 const validateCollegeData = (req, res, next) => {
   const { category, courses, facilities, services } = req.body;
 
-  // Validate category
   if (category) {
     let parsedCategory;
     try {
@@ -54,7 +52,6 @@ const validateCollegeData = (req, res, next) => {
     }
   }
 
-  // Validate courses
   if (courses) {
     let parsedCourses;
     try {
@@ -70,7 +67,6 @@ const validateCollegeData = (req, res, next) => {
     }
   }
 
-  // Validate facilities
   if (facilities !== undefined) {
     let parsedFacilities;
     try {
@@ -86,7 +82,6 @@ const validateCollegeData = (req, res, next) => {
     }
   }
 
-  // Validate services
   if (services !== undefined) {
     let parsedServices;
     try {
