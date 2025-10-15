@@ -148,7 +148,7 @@ const seedDefaultIndiaCountry = require("./app/helpers/insertIndia");
 const { insertDefaultAdmin } = require("./app/helpers/insertAdmin");
 
 const app = express();
-const port = process.env.PORT || 5050;
+const port = process.env.PORT || 4041;
 
 // ======= CORS Configuration =======
 const allowedOrigins = [
